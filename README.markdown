@@ -7,6 +7,7 @@ It includes these filters:
 
 * Cache Buster - Write a fingerprint into each file name
 * Coffescript - Convert Coffeescript to Javascript
+* ES6 Module Transpiler - Transpile ES6 to ES5 Javascript
 * GZip - Create gzip'd version of your files
 * Handlebars - Process handlebars templates
 * IIFE - Wrap source files in Immediately Invoked Function Expressions
