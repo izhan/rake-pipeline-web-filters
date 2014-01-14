@@ -17,12 +17,22 @@ function(__dependency1__) {
 });
 JAVASCRIPT
 
+  let(:expected_amd_with_module_id_output) { <<-JAVASCRIPT }
+define("octopus",
+["ember"],
+function(__dependency1__) {
+  "use strict";
+  var get = __dependency1__.get;
+  var set = __dependency1__.set;
+});
+JAVASCRIPT
+
   let(:expected_cjs_output) { <<-JAVASCRIPT }
 "use strict";
 var get = require("ember").get;
 var set = require("ember").set;
 JAVASCRIPT
-  
+
   let(:expected_options_output) { <<-JAVASCRIPT }
 (function(__dependency1__) {
   "use strict";
@@ -64,6 +74,21 @@ JAVASCRIPT
 
     file = MemoryFileWrapper.files["/path/to/output/input.js"]
     should_match file.body, expected_amd_output
+    file.encoding.should == "UTF-8"
+  end
+
+  it "generates correct default amd output with a module_id_generator" do
+    filter = setup_filter ES6ModuleFilter.new(
+      module_id_generator: proc { |input| "octopus" }
+    )
+
+    filter.output_files.should == [output_file("input.js")]
+
+    tasks = filter.generate_rake_tasks
+    tasks.each(&:invoke)
+
+    file = MemoryFileWrapper.files["/path/to/output/input.js"]
+    should_match file.body, expected_amd_with_module_id_output
     file.encoding.should == "UTF-8"
   end
 

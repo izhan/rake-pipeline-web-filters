@@ -6,14 +6,19 @@ module Rake::Pipeline::Web::Filters
     # @return [Hash] a hash of options to pass to Transpiler
     attr_reader :options
 
-    # By default, the ES6ModuleFilter converts all inputs
-    # with the extension +.js+.
+    # Create an instance of this filter.
     #
-    # @param [Hash] options options to pass to the Transpiler
+    # Possible options:
+    # module_id_generator: provide a Proc to convert an input to a
+    #                      module identifier (AMD only)
+    # Other options are passed along to the RubyES6ModuleTranspiler and then to
+    #  the node transpiler. See https://github.com/square/es6-module-transpiler
+    #  for more info.
+    #
+    # @param [Hash] options options (see above)
     # @param [Proc] block the output name generator block
     def initialize(options = {}, &block)
-      # probably delete
-      block ||= proc { |input| input.sub(/\.coffee$/, '.js') }
+      @module_id_generator = options[:module_id_generator]
       super(&block)
       @options = options
     end
@@ -27,7 +32,13 @@ module Rake::Pipeline::Web::Filters
       inputs.each do |input|
         begin
           body = input.read if input.respond_to?(:read)
-          output.write RubyES6ModuleTranspiler.transpile(body, @options)
+          local_opts = {}
+          if @module_id_generator
+            local_opts[:moduleName] = @module_id_generator.call(input)
+          end
+          opts = @options.merge(local_opts)
+          opts.delete(:module_id_generator)
+          output.write RubyES6ModuleTranspiler.transpile(body, opts)
         rescue ExecJS::Error => error
           raise error, "Error compiling #{input.path}. #{error.message}"
         end
